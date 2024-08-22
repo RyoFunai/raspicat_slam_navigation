@@ -40,6 +40,7 @@ def generate_launch_description():
     container_name = LaunchConfiguration('container_name')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    mcl_2d_params_file = LaunchConfiguration('mcl_2d_params_file')
 
     declare_namespace = DeclareLaunchArgument(
         'namespace',
@@ -79,6 +80,12 @@ def generate_launch_description():
     declare_log_level = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
+    declare_mcl_2d_params_file = DeclareLaunchArgument(
+        'mcl_2d_params_file',
+        default_value=os.path.join(
+            get_package_share_directory('mcl_2d'),
+                'config', 'param', 'mcl_2d.yaml'),
+                description='Full path to the MCL 2D parameters file')
 
     container_name_full = (namespace, '/', container_name)
 
@@ -94,7 +101,7 @@ def generate_launch_description():
     
     lifecycle_nodes = [
         'map_server',
-        'amcl',
+        # 'amcl',
         'controller_server',
         'smoother_server',
         'planner_server',
@@ -113,27 +120,37 @@ def generate_launch_description():
                 package='nav2_map_server',
                 executable='map_server',
                 name='map_server',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
+            # Node(
+            #     package='nav2_amcl',
+            #     executable='amcl',
+            #     name='amcl',
+            #     output='log',
+            #     respawn=use_respawn,
+            #     respawn_delay=2.0,
+            #     parameters=[configured_params],
+            #     arguments=['--ros-args', '--log-level', log_level],
+            #     remappings=remappings),
             Node(
-                package='nav2_amcl',
-                executable='amcl',
-                name='amcl',
+                package='mcl_2d',
+                executable='mcl_2d',
+                name='mcl',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params],
+                parameters=[configured_params, mcl_2d_params_file, {'map_param_path': map_yaml_file}],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
                 name='lifecycle_manager_localization',
-                output='screen',
+                output='log',
                 arguments=['--ros-args', '--log-level', log_level],
                 parameters=[{'use_sim_time': use_sim_time},
                             {'autostart': autostart},
@@ -141,7 +158,7 @@ def generate_launch_description():
             Node(
                 package='nav2_controller',
                 executable='controller_server',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -151,7 +168,7 @@ def generate_launch_description():
                 package='nav2_smoother',
                 executable='smoother_server',
                 name='smoother_server',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -161,7 +178,7 @@ def generate_launch_description():
                 package='nav2_planner',
                 executable='planner_server',
                 name='planner_server',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -171,7 +188,7 @@ def generate_launch_description():
                 package='nav2_behaviors',
                 executable='behavior_server',
                 name='behavior_server',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -181,7 +198,7 @@ def generate_launch_description():
                 package='nav2_bt_navigator',
                 executable='bt_navigator',
                 name='bt_navigator',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -191,7 +208,7 @@ def generate_launch_description():
                 package='nav2_waypoint_follower',
                 executable='waypoint_follower',
                 name='waypoint_follower',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -201,7 +218,7 @@ def generate_launch_description():
                 package='nav2_velocity_smoother',
                 executable='velocity_smoother',
                 name='velocity_smoother',
-                output='screen',
+                output='log',
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -212,7 +229,7 @@ def generate_launch_description():
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
-                output='screen',
+                output='log',
                 arguments=['--ros-args', '--log-level', log_level],
                 parameters=[{'use_sim_time': use_sim_time},
                             {'autostart': autostart},
@@ -230,12 +247,12 @@ def generate_launch_description():
                 name='map_server',
                 parameters=[configured_params],
                 remappings=remappings),
-            ComposableNode(
-                package='nav2_amcl',
-                plugin='nav2_amcl::AmclNode',
-                name='amcl',
-                parameters=[configured_params],
-                remappings=remappings),
+            # ComposableNode(
+            #     package='nav2_amcl',
+            #     plugin='nav2_amcl::AmclNode',
+            #     name='amcl',
+            #     parameters=[configured_params],
+            #     remappings=remappings),
             ComposableNode(
                 package='nav2_lifecycle_manager',
                 plugin='nav2_lifecycle_manager::LifecycleManager',
@@ -317,6 +334,7 @@ def generate_launch_description():
     ld.add_action(declare_use_respawn)
     ld.add_action(declare_log_level)
     ld.add_action(declare_arg_use_rviz)
+    ld.add_action(declare_mcl_2d_params_file)
 
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)

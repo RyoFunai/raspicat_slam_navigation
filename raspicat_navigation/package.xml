@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>navigation2</depend>
+  <depend>mcl_2d</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
